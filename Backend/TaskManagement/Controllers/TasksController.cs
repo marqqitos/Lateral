@@ -31,7 +31,7 @@ public class TasksController : ControllerBase
         try
         {
             _logger.LogInformation("Retrieving all tasks");
-            var result = await _taskService.GetAllTasksAsync();
+            var result = await _taskService.GetAllTasks();
             return Ok(result);
         }
         catch (Exception ex)
@@ -61,7 +61,7 @@ public class TasksController : ControllerBase
                 return BadRequest(new { message = "Invalid task ID" });
             }
 
-            var task = await _taskService.GetTaskByIdAsync(id);
+            var task = await _taskService.GetTaskById(id);
             if (task == null)
             {
                 return NotFound(new { message = $"Task with ID {id} not found" });
@@ -96,7 +96,7 @@ public class TasksController : ControllerBase
 
             _logger.LogInformation("Creating new task with title: {TaskTitle}", request.Title);
 
-            var createdTask = await _taskService.CreateTaskAsync(request);
+            var createdTask = await _taskService.CreateTask(request);
 
             return CreatedAtAction(
                 nameof(GetTask),
@@ -135,7 +135,7 @@ public class TasksController : ControllerBase
                 return BadRequest(new { message = "Invalid task ID" });
             }
 
-            var updatedTask = await _taskService.ToggleTaskCompletionAsync(id);
+            var updatedTask = await _taskService.ToggleTaskCompletion(id);
             if (updatedTask == null)
             {
                 return NotFound(new { message = $"Task with ID {id} not found" });
@@ -170,7 +170,7 @@ public class TasksController : ControllerBase
                 return BadRequest(new { message = "Invalid task ID" });
             }
 
-            var deleted = await _taskService.DeleteTaskAsync(id);
+            var deleted = await _taskService.DeleteTask(id);
             if (!deleted)
             {
                 return NotFound(new { message = $"Task with ID {id} not found" });

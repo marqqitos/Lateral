@@ -13,20 +13,20 @@ public class TaskRepository : ITaskRepository
         _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
-    public async Task<IEnumerable<Models.Task>> GetAllAsync()
+    public async Task<IEnumerable<Models.Task>> GetAll()
     {
         return await _context.Tasks
             .OrderByDescending(t => t.CreatedAt)
             .ToListAsync();
     }
 
-    public async Task<Models.Task?> GetByIdAsync(long id)
+    public async Task<Models.Task?> GetById(long id)
     {
         return await _context.Tasks
             .FirstOrDefaultAsync(t => t.Id == id);
     }
 
-    public async Task<Models.Task> CreateAsync(Models.Task task)
+    public async Task<Models.Task> Create(Models.Task task)
     {
         if (task == null)
             throw new ArgumentNullException(nameof(task));
@@ -40,7 +40,7 @@ public class TaskRepository : ITaskRepository
         return task;
     }
 
-    public async Task<Models.Task?> UpdateAsync(Models.Task task)
+    public async Task<Models.Task?> Update(Models.Task task)
     {
         if (task == null)
             throw new ArgumentNullException(nameof(task));
@@ -58,7 +58,7 @@ public class TaskRepository : ITaskRepository
         return existingTask;
     }
 
-    public async Task<bool> DeleteAsync(long id)
+    public async Task<bool> Delete(long id)
     {
         var task = await _context.Tasks.FindAsync(id);
         if (task == null)
@@ -69,7 +69,7 @@ public class TaskRepository : ITaskRepository
         return true;
     }
 
-    public async Task<bool> ExistsAsync(long id)
+    public async Task<bool> Exists(long id)
     {
         return await _context.Tasks.AnyAsync(t => t.Id == id);
     }

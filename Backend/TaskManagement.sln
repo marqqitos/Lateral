@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskManagement", "TaskManagement\TaskManagement.csproj", "{C2AD4361-E614-4038-8E6B-A96D2B993BA5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskManagement.Tests", "TaskManagement.Tests\TaskManagement.Tests.csproj", "{2F3D02EF-FF0B-473D-A95F-A7B61E398DE0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,18 @@ Global
 		{C2AD4361-E614-4038-8E6B-A96D2B993BA5}.Release|x64.Build.0 = Release|Any CPU
 		{C2AD4361-E614-4038-8E6B-A96D2B993BA5}.Release|x86.ActiveCfg = Release|Any CPU
 		{C2AD4361-E614-4038-8E6B-A96D2B993BA5}.Release|x86.Build.0 = Release|Any CPU
+		{2F3D02EF-FF0B-473D-A95F-A7B61E398DE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F3D02EF-FF0B-473D-A95F-A7B61E398DE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F3D02EF-FF0B-473D-A95F-A7B61E398DE0}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2F3D02EF-FF0B-473D-A95F-A7B61E398DE0}.Debug|x64.Build.0 = Debug|Any CPU
+		{2F3D02EF-FF0B-473D-A95F-A7B61E398DE0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2F3D02EF-FF0B-473D-A95F-A7B61E398DE0}.Debug|x86.Build.0 = Debug|Any CPU
+		{2F3D02EF-FF0B-473D-A95F-A7B61E398DE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F3D02EF-FF0B-473D-A95F-A7B61E398DE0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F3D02EF-FF0B-473D-A95F-A7B61E398DE0}.Release|x64.ActiveCfg = Release|Any CPU
+		{2F3D02EF-FF0B-473D-A95F-A7B61E398DE0}.Release|x64.Build.0 = Release|Any CPU
+		{2F3D02EF-FF0B-473D-A95F-A7B61E398DE0}.Release|x86.ActiveCfg = Release|Any CPU
+		{2F3D02EF-FF0B-473D-A95F-A7B61E398DE0}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
