@@ -1,0 +1,69 @@
+@TaskManagement_HostAddress = https://localhost:7055
+
+### Get all tasks
+GET {{TaskManagement_HostAddress}}/api/tasks
+Accept: application/json
+
+###
+
+### Get a specific task by ID
+GET {{TaskManagement_HostAddress}}/api/tasks/1
+Accept: application/json
+
+###
+
+### Create a new task
+POST {{TaskManagement_HostAddress}}/api/tasks
+Content-Type: application/json
+
+{
+  "title": "Complete API implementation",
+  "description": "Finish the task management API with all required endpoints"
+}
+
+###
+
+### Create another task
+POST {{TaskManagement_HostAddress}}/api/tasks
+Content-Type: application/json
+
+{
+  "title": "Write unit tests"
+}
+
+###
+
+### Toggle task completion status
+PATCH {{TaskManagement_HostAddress}}/api/tasks/1/toggle
+Accept: application/json
+
+###
+
+### Toggle task completion status for task 2
+PATCH {{TaskManagement_HostAddress}}/api/tasks/2/toggle
+Accept: application/json
+
+###
+
+### Delete a task
+DELETE {{TaskManagement_HostAddress}}/api/tasks/1
+Accept: application/json
+
+###
+
+### Test error handling - Get non-existent task
+GET {{TaskManagement_HostAddress}}/api/tasks/999
+Accept: application/json
+
+###
+
+### Test validation - Create task with empty title
+POST {{TaskManagement_HostAddress}}/api/tasks
+Content-Type: application/json
+
+{
+  "title": "",
+  "description": "This should fail validation"
+}
+
+###
