@@ -53,3 +53,6 @@ app.UseCors("AllowFrontend");
 app.MapControllers();
 
 app.Run();
+
+// Make the implicit Program class public for integration tests
+public partial class Program { }
