@@ -1,0 +1,30 @@
+services:
+  backend:
+    build:
+      context: ./Backend/TaskManagement
+      dockerfile: Dockerfile
+    container_name: task-management-backend
+    ports:
+      - "5082:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    networks:
+      - task-management-network
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: task-management-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:5082
+    depends_on:
+      - backend
+    networks:
+      - task-management-network
+
+networks:
+  task-management-network:
+    driver: bridge
