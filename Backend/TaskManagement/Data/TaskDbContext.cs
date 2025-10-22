@@ -25,27 +25,5 @@ public class TaskDbContext : DbContext
             entity.Property(t => t.CreatedAt);
             entity.Property(t => t.UpdatedAt);
         });
-
-        // Seed some initial data
-        modelBuilder.Entity<Models.Task>().HasData(
-            new Models.Task
-            {
-                Id = 1,
-                Title = "Sample Task 1",
-                Description = "This is a sample task for testing",
-                IsCompleted = false,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            },
-            new Models.Task
-            {
-                Id = 2,
-                Title = "Sample Task 2",
-                Description = "Another sample task",
-                IsCompleted = true,
-                CreatedAt = DateTime.UtcNow.AddDays(-1),
-                UpdatedAt = DateTime.UtcNow.AddDays(-1)
-            }
-        );
     }
 }

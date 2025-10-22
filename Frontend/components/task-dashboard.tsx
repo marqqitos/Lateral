@@ -1,13 +1,13 @@
 "use client"
 
-import type { Task } from "@/app/page"
+import type { Task } from "@/lib/api"
 import { TaskItem } from "./task-item"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface TaskDashboardProps {
   tasks: Task[]
-  onToggleCompletion: (id: string) => void
-  onDeleteTask: (id: string) => void
+  onToggleCompletion: (id: number) => void
+  onDeleteTask: (id: number) => void
 }
 
 export function TaskDashboard({ tasks, onToggleCompletion, onDeleteTask }: TaskDashboardProps) {

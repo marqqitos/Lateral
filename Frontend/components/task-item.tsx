@@ -1,14 +1,14 @@
 "use client"
 
-import type { Task } from "@/app/page"
+import type { Task } from "@/lib/api"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Trash2 } from "lucide-react"
 
 interface TaskItemProps {
   task: Task
-  onToggleCompletion: (id: string) => void
-  onDeleteTask: (id: string) => void
+  onToggleCompletion: (id: number) => void
+  onDeleteTask: (id: number) => void
 }
 
 export function TaskItem({ task, onToggleCompletion, onDeleteTask }: TaskItemProps) {

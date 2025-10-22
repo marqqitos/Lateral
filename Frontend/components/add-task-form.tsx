@@ -10,31 +10,39 @@ import { Textarea } from "@/components/ui/textarea"
 import { Plus } from "lucide-react"
 
 interface AddTaskFormProps {
-  onAddTask: (title: string, description: string) => void
+  onAddTask: (title: string, description: string) => Promise<{ success: boolean; error?: string }>
 }
 
 export function AddTaskForm({ onAddTask }: AddTaskFormProps) {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!title.trim()) {
-      alert("Please enter a task title")
+      setError("Please enter a task title")
       return
     }
 
     setIsSubmitting(true)
+    setError(null)
 
-    // Simulate a small delay for better UX
-    setTimeout(() => {
-      onAddTask(title, description)
-      setTitle("")
-      setDescription("")
+    try {
+      const result = await onAddTask(title, description)
+      if (result.success) {
+        setTitle("")
+        setDescription("")
+      } else {
+        setError(result.error || "Failed to create task")
+      }
+    } catch (err) {
+      setError("An unexpected error occurred")
+    } finally {
       setIsSubmitting(false)
-    }, 300)
+    }
   }
 
   return (
@@ -45,6 +53,12 @@ export function AddTaskForm({ onAddTask }: AddTaskFormProps) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
+
           <div>
             <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
               Task Title
@@ -53,7 +67,12 @@ export function AddTaskForm({ onAddTask }: AddTaskFormProps) {
               id="title"
               placeholder="Enter task title..."
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => {
+                setTitle(e.target.value)
+                if (error && e.target.value.trim()) {
+                  setError(null)
+                }
+              }}
               disabled={isSubmitting}
               className="w-full"
             />
