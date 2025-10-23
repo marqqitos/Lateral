@@ -45,6 +45,8 @@ export function TaskItem({ task, onToggleCompletion, onDeleteTask }: TaskItemPro
         size="sm"
         onClick={() => onDeleteTask(task.id)}
         className="flex-shrink-0 text-gray-400 hover:text-red-600 hover:bg-red-50"
+        aria-label={`Delete task: ${task.title}`}
+        data-testid={`delete-task-${task.id}`}
       >
         <Trash2 className="w-4 h-4" />
       </Button>
