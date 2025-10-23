@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using TaskManagement.DTOs;
+using TaskManagement.Exceptions;
 using TaskManagement.Services;
 
 namespace TaskManagement.Controllers;
@@ -28,18 +29,9 @@ public class TasksController : ControllerBase
     [ProducesResponseType(typeof(TaskListResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<TaskListResponse>> GetAllTasks()
     {
-        try
-        {
-            _logger.LogInformation("Retrieving all tasks");
-            var result = await _taskService.GetAllTasks();
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while retrieving tasks");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "An error occurred while retrieving tasks" });
-        }
+        _logger.LogInformation("Retrieving all tasks");
+        var result = await _taskService.GetAllTasks();
+        return Ok(result);
     }
 
     /// <summary>
@@ -49,32 +41,13 @@ public class TasksController : ControllerBase
     /// <returns>Task details</returns>
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(TaskResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TaskResponse>> GetTask(long id)
     {
-        try
-        {
-            _logger.LogInformation("Retrieving task with ID: {TaskId}", id);
-
-            if (id <= 0)
-            {
-                return BadRequest(new { message = "Invalid task ID" });
-            }
-
-            var task = await _taskService.GetTaskById(id);
-            if (task == null)
-            {
-                return NotFound(new { message = $"Task with ID {id} not found" });
-            }
-
-            return Ok(task);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while retrieving task {TaskId}", id);
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "An error occurred while retrieving the task" });
-        }
+        _logger.LogInformation("Retrieving task with ID: {TaskId}", id);
+        var task = await _taskService.GetTaskById(id);
+        return Ok(task);
     }
 
     /// <summary>
@@ -87,33 +60,23 @@ public class TasksController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<TaskResponse>> CreateTask([FromBody] CreateTaskRequest request)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            _logger.LogInformation("Creating new task with title: {TaskTitle}", request.Title);
-
-            var createdTask = await _taskService.CreateTask(request);
-
-            return CreatedAtAction(
-                nameof(GetTask),
-                new { id = createdTask.Id },
-                createdTask);
+            var validationErrors = ModelState
+                .Where(x => x.Value?.Errors.Count > 0)
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                );
+            throw new TaskValidationException(validationErrors);
         }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Invalid argument while creating task");
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while creating task");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "An error occurred while creating the task" });
-        }
+
+        _logger.LogInformation("Creating new task with title: {TaskTitle}", request.Title);
+        var createdTask = await _taskService.CreateTask(request);
+        return CreatedAtAction(
+            nameof(GetTask),
+            new { id = createdTask.Id },
+            createdTask);
     }
 
     /// <summary>
@@ -123,32 +86,13 @@ public class TasksController : ControllerBase
     /// <returns>Updated task</returns>
     [HttpPatch("{id}/toggle")]
     [ProducesResponseType(typeof(TaskResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TaskResponse>> ToggleTaskCompletion(long id)
     {
-        try
-        {
-            _logger.LogInformation("Toggling completion status for task ID: {TaskId}", id);
-
-            if (id <= 0)
-            {
-                return BadRequest(new { message = "Invalid task ID" });
-            }
-
-            var updatedTask = await _taskService.ToggleTaskCompletion(id);
-            if (updatedTask == null)
-            {
-                return NotFound(new { message = $"Task with ID {id} not found" });
-            }
-
-            return Ok(updatedTask);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while toggling task completion {TaskId}", id);
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "An error occurred while updating the task" });
-        }
+        _logger.LogInformation("Toggling completion status for task ID: {TaskId}", id);
+        var updatedTask = await _taskService.ToggleTaskCompletion(id);
+        return Ok(updatedTask);
     }
 
     /// <summary>
@@ -158,31 +102,12 @@ public class TasksController : ControllerBase
     /// <returns>No content if successful</returns>
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteTask(long id)
     {
-        try
-        {
-            _logger.LogInformation("Deleting task with ID: {TaskId}", id);
-
-            if (id <= 0)
-            {
-                return BadRequest(new { message = "Invalid task ID" });
-            }
-
-            var deleted = await _taskService.DeleteTask(id);
-            if (!deleted)
-            {
-                return NotFound(new { message = $"Task with ID {id} not found" });
-            }
-
-            return NoContent();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while deleting task {TaskId}", id);
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "An error occurred while deleting the task" });
-        }
+        _logger.LogInformation("Deleting task with ID: {TaskId}", id);
+        await _taskService.DeleteTask(id);
+        return NoContent();
     }
 }

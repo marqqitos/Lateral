@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Data;
+using TaskManagement.Middleware;
 using TaskManagement.Repositories;
 using TaskManagement.Services;
 
@@ -45,6 +46,9 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.UseDeveloperExceptionPage();
 }
+
+// Add global exception handling middleware
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseHttpsRedirection();
 

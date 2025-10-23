@@ -129,8 +129,13 @@ public class TasksControllerIntegrationTests
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
 
-        var content = await response.Content.ReadAsStringAsync();
-        Assert.That(content, Contains.Substring("Task with ID 999 not found"));
+        var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>(_jsonOptions);
+        Assert.That(errorResponse, Is.Not.Null);
+        Assert.That(errorResponse.Type, Is.EqualTo("TaskNotFound"));
+        Assert.That(errorResponse.Title, Is.EqualTo("Task Not Found"));
+        Assert.That(errorResponse.Status, Is.EqualTo(404));
+        Assert.That(errorResponse.Detail, Contains.Substring("Task with ID 999 was not found"));
+        Assert.That(errorResponse.Extensions, Contains.Key("taskId"));
     }
 
     [Test]
@@ -142,8 +147,12 @@ public class TasksControllerIntegrationTests
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
 
-        var content = await response.Content.ReadAsStringAsync();
-        Assert.That(content, Contains.Substring("Invalid task ID"));
+        var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>(_jsonOptions);
+        Assert.That(errorResponse, Is.Not.Null);
+        Assert.That(errorResponse.Type, Is.EqualTo("InvalidTask"));
+        Assert.That(errorResponse.Title, Is.EqualTo("Invalid Task"));
+        Assert.That(errorResponse.Status, Is.EqualTo(400));
+        Assert.That(errorResponse.Detail, Contains.Substring("Task ID must be greater than zero"));
     }
 
     #endregion
@@ -190,6 +199,11 @@ public class TasksControllerIntegrationTests
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+
+        // ASP.NET Core returns standard ValidationProblemDetails for model validation failures
+        var content = await response.Content.ReadAsStringAsync();
+        Assert.That(content, Contains.Substring("Title"));
+        Assert.That(content, Contains.Substring("required") | Contains.Substring("empty"));
     }
 
     [Test]
@@ -322,8 +336,13 @@ public class TasksControllerIntegrationTests
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
 
-        var content = await response.Content.ReadAsStringAsync();
-        Assert.That(content, Contains.Substring("Task with ID 999 not found"));
+        var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>(_jsonOptions);
+        Assert.That(errorResponse, Is.Not.Null);
+        Assert.That(errorResponse.Type, Is.EqualTo("TaskNotFound"));
+        Assert.That(errorResponse.Title, Is.EqualTo("Task Not Found"));
+        Assert.That(errorResponse.Status, Is.EqualTo(404));
+        Assert.That(errorResponse.Detail, Contains.Substring("Task with ID 999 was not found"));
+        Assert.That(errorResponse.Extensions, Contains.Key("taskId"));
     }
 
     [Test]
@@ -335,8 +354,12 @@ public class TasksControllerIntegrationTests
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
 
-        var content = await response.Content.ReadAsStringAsync();
-        Assert.That(content, Contains.Substring("Invalid task ID"));
+        var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>(_jsonOptions);
+        Assert.That(errorResponse, Is.Not.Null);
+        Assert.That(errorResponse.Type, Is.EqualTo("InvalidTask"));
+        Assert.That(errorResponse.Title, Is.EqualTo("Invalid Task"));
+        Assert.That(errorResponse.Status, Is.EqualTo(400));
+        Assert.That(errorResponse.Detail, Contains.Substring("Task ID must be greater than zero"));
     }
 
     #endregion
@@ -371,8 +394,13 @@ public class TasksControllerIntegrationTests
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
 
-        var content = await response.Content.ReadAsStringAsync();
-        Assert.That(content, Contains.Substring("Task with ID 999 not found"));
+        var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>(_jsonOptions);
+        Assert.That(errorResponse, Is.Not.Null);
+        Assert.That(errorResponse.Type, Is.EqualTo("TaskNotFound"));
+        Assert.That(errorResponse.Title, Is.EqualTo("Task Not Found"));
+        Assert.That(errorResponse.Status, Is.EqualTo(404));
+        Assert.That(errorResponse.Detail, Contains.Substring("Task with ID 999 was not found"));
+        Assert.That(errorResponse.Extensions, Contains.Key("taskId"));
     }
 
     [Test]
@@ -384,8 +412,12 @@ public class TasksControllerIntegrationTests
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
 
-        var content = await response.Content.ReadAsStringAsync();
-        Assert.That(content, Contains.Substring("Invalid task ID"));
+        var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>(_jsonOptions);
+        Assert.That(errorResponse, Is.Not.Null);
+        Assert.That(errorResponse.Type, Is.EqualTo("InvalidTask"));
+        Assert.That(errorResponse.Title, Is.EqualTo("Invalid Task"));
+        Assert.That(errorResponse.Status, Is.EqualTo(400));
+        Assert.That(errorResponse.Detail, Contains.Substring("Task ID must be greater than zero"));
     }
 
     #endregion

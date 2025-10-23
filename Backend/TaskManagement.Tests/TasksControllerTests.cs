@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using TaskManagement.Controllers;
 using TaskManagement.DTOs;
+using TaskManagement.Exceptions;
 using TaskManagement.Services;
 using AsyncTask = System.Threading.Tasks.Task;
 
@@ -89,18 +90,13 @@ public class TasksControllerTests
     }
 
     [Test]
-    public async AsyncTask GetAllTasks_WhenServiceThrowsException_ReturnsInternalServerError()
+    public async AsyncTask GetAllTasks_WhenServiceThrowsException_ExceptionBubbles()
     {
         // Arrange
         _mockTaskService.Setup(s => s.GetAllTasks()).ThrowsAsync(new Exception("Database error"));
 
-        // Act
-        var result = await _controller.GetAllTasks();
-
-        // Assert
-        Assert.That(result.Result, Is.TypeOf<ObjectResult>());
-        var objectResult = result.Result as ObjectResult;
-        Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        // Act & Assert
+        Assert.ThrowsAsync<Exception>(() => _controller.GetAllTasks());
     }
 
     #endregion
@@ -130,62 +126,48 @@ public class TasksControllerTests
     }
 
     [Test]
-    public async AsyncTask GetTask_WhenTaskDoesNotExist_ReturnsNotFound()
+    public async AsyncTask GetTask_WhenTaskDoesNotExist_ThrowsTaskNotFoundException()
     {
         // Arrange
         var taskId = 999L;
-        _mockTaskService.Setup(s => s.GetTaskById(taskId)).ReturnsAsync((TaskResponse?)null);
+        _mockTaskService.Setup(s => s.GetTaskById(taskId)).ThrowsAsync(new TaskNotFoundException(taskId));
 
-        // Act
-        var result = await _controller.GetTask(taskId);
-
-        // Assert
-        Assert.That(result.Result, Is.TypeOf<NotFoundObjectResult>());
-        var notFoundResult = result.Result as NotFoundObjectResult;
-        var response = notFoundResult!.Value;
-        Assert.That(response!.ToString(), Contains.Substring("Task with ID 999 not found"));
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<TaskNotFoundException>(() => _controller.GetTask(taskId));
+        Assert.That(exception.TaskId, Is.EqualTo(taskId));
     }
 
     [Test]
-    public async AsyncTask GetTask_WhenIdIsZero_ReturnsBadRequest()
+    public async AsyncTask GetTask_WhenIdIsZero_ThrowsInvalidTaskException()
     {
-        // Act
-        var result = await _controller.GetTask(0);
+        // Arrange
+        _mockTaskService.Setup(s => s.GetTaskById(0)).ThrowsAsync(new InvalidTaskException("id", "Task ID must be greater than zero"));
 
-        // Assert
-        Assert.That(result.Result, Is.TypeOf<BadRequestObjectResult>());
-        var badRequestResult = result.Result as BadRequestObjectResult;
-        var response = badRequestResult!.Value;
-        Assert.That(response!.ToString(), Contains.Substring("Invalid task ID"));
-
-        _mockTaskService.Verify(s => s.GetTaskById(It.IsAny<long>()), Times.Never);
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<InvalidTaskException>(() => _controller.GetTask(0));
+        Assert.That(exception.PropertyName, Is.EqualTo("id"));
     }
 
     [Test]
-    public async AsyncTask GetTask_WhenIdIsNegative_ReturnsBadRequest()
+    public async AsyncTask GetTask_WhenIdIsNegative_ThrowsInvalidTaskException()
     {
-        // Act
-        var result = await _controller.GetTask(-1);
+        // Arrange
+        _mockTaskService.Setup(s => s.GetTaskById(-1)).ThrowsAsync(new InvalidTaskException("id", "Task ID must be greater than zero"));
 
-        // Assert
-        Assert.That(result.Result, Is.TypeOf<BadRequestObjectResult>());
-        _mockTaskService.Verify(s => s.GetTaskById(It.IsAny<long>()), Times.Never);
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<InvalidTaskException>(() => _controller.GetTask(-1));
+        Assert.That(exception.PropertyName, Is.EqualTo("id"));
     }
 
     [Test]
-    public async AsyncTask GetTask_WhenServiceThrowsException_ReturnsInternalServerError()
+    public async AsyncTask GetTask_WhenServiceThrowsException_ExceptionBubbles()
     {
         // Arrange
         _mockTaskService.Setup(s => s.GetTaskById(It.IsAny<long>()))
             .ThrowsAsync(new Exception("Database error"));
 
-        // Act
-        var result = await _controller.GetTask(1);
-
-        // Assert
-        Assert.That(result.Result, Is.TypeOf<ObjectResult>());
-        var objectResult = result.Result as ObjectResult;
-        Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        // Act & Assert
+        Assert.ThrowsAsync<Exception>(() => _controller.GetTask(1));
     }
 
     #endregion
@@ -225,53 +207,41 @@ public class TasksControllerTests
     }
 
     [Test]
-    public async AsyncTask CreateTask_WhenModelStateIsInvalid_ReturnsBadRequest()
+    public async AsyncTask CreateTask_WhenModelStateIsInvalid_ThrowsTaskValidationException()
     {
         // Arrange
         var request = new CreateTaskRequest { Title = "", Description = "Test" };
         _controller.ModelState.AddModelError("Title", "Title is required");
 
-        // Act
-        var result = await _controller.CreateTask(request);
-
-        // Assert
-        Assert.That(result.Result, Is.TypeOf<BadRequestObjectResult>());
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<TaskValidationException>(() => _controller.CreateTask(request));
+        Assert.That(exception.ValidationErrors, Contains.Key("Title"));
         _mockTaskService.Verify(s => s.CreateTask(It.IsAny<CreateTaskRequest>()), Times.Never);
     }
 
     [Test]
-    public async AsyncTask CreateTask_WhenServiceThrowsArgumentException_ReturnsBadRequest()
+    public async AsyncTask CreateTask_WhenServiceThrowsInvalidTaskException_ExceptionBubbles()
     {
         // Arrange
         var request = new CreateTaskRequest { Title = "Test Task" };
         _mockTaskService.Setup(s => s.CreateTask(request))
-            .ThrowsAsync(new ArgumentException("Invalid title"));
+            .ThrowsAsync(new InvalidTaskException("Invalid title"));
 
-        // Act
-        var result = await _controller.CreateTask(request);
-
-        // Assert
-        Assert.That(result.Result, Is.TypeOf<BadRequestObjectResult>());
-        var badRequestResult = result.Result as BadRequestObjectResult;
-        var response = badRequestResult!.Value;
-        Assert.That(response!.ToString(), Contains.Substring("Invalid title"));
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<InvalidTaskException>(() => _controller.CreateTask(request));
+        Assert.That(exception.Message, Contains.Substring("Invalid title"));
     }
 
     [Test]
-    public async AsyncTask CreateTask_WhenServiceThrowsGeneralException_ReturnsInternalServerError()
+    public async AsyncTask CreateTask_WhenServiceThrowsGeneralException_ExceptionBubbles()
     {
         // Arrange
         var request = new CreateTaskRequest { Title = "Test Task" };
         _mockTaskService.Setup(s => s.CreateTask(request))
             .ThrowsAsync(new Exception("Database error"));
 
-        // Act
-        var result = await _controller.CreateTask(request);
-
-        // Assert
-        Assert.That(result.Result, Is.TypeOf<ObjectResult>());
-        var objectResult = result.Result as ObjectResult;
-        Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        // Act & Assert
+        Assert.ThrowsAsync<Exception>(() => _controller.CreateTask(request));
     }
 
     #endregion
@@ -301,59 +271,51 @@ public class TasksControllerTests
     }
 
     [Test]
-    public async AsyncTask ToggleTaskCompletion_WhenTaskDoesNotExist_ReturnsNotFound()
+    public async AsyncTask ToggleTaskCompletion_WhenTaskDoesNotExist_ThrowsTaskNotFoundException()
     {
         // Arrange
         var taskId = 999L;
         _mockTaskService.Setup(s => s.ToggleTaskCompletion(taskId))
-            .ReturnsAsync((TaskResponse?)null);
+            .ThrowsAsync(new TaskNotFoundException(taskId));
 
-        // Act
-        var result = await _controller.ToggleTaskCompletion(taskId);
-
-        // Assert
-        Assert.That(result.Result, Is.TypeOf<NotFoundObjectResult>());
-        var notFoundResult = result.Result as NotFoundObjectResult;
-        var response = notFoundResult!.Value;
-        Assert.That(response!.ToString(), Contains.Substring("Task with ID 999 not found"));
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<TaskNotFoundException>(() => _controller.ToggleTaskCompletion(taskId));
+        Assert.That(exception.TaskId, Is.EqualTo(taskId));
     }
 
     [Test]
-    public async AsyncTask ToggleTaskCompletion_WhenIdIsZero_ReturnsBadRequest()
+    public async AsyncTask ToggleTaskCompletion_WhenIdIsZero_ThrowsInvalidTaskException()
     {
-        // Act
-        var result = await _controller.ToggleTaskCompletion(0);
+        // Arrange
+        _mockTaskService.Setup(s => s.ToggleTaskCompletion(0))
+            .ThrowsAsync(new InvalidTaskException("id", "Task ID must be greater than zero"));
 
-        // Assert
-        Assert.That(result.Result, Is.TypeOf<BadRequestObjectResult>());
-        _mockTaskService.Verify(s => s.ToggleTaskCompletion(It.IsAny<long>()), Times.Never);
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<InvalidTaskException>(() => _controller.ToggleTaskCompletion(0));
+        Assert.That(exception.PropertyName, Is.EqualTo("id"));
     }
 
     [Test]
-    public async AsyncTask ToggleTaskCompletion_WhenIdIsNegative_ReturnsBadRequest()
+    public async AsyncTask ToggleTaskCompletion_WhenIdIsNegative_ThrowsInvalidTaskException()
     {
-        // Act
-        var result = await _controller.ToggleTaskCompletion(-1);
+        // Arrange
+        _mockTaskService.Setup(s => s.ToggleTaskCompletion(-1))
+            .ThrowsAsync(new InvalidTaskException("id", "Task ID must be greater than zero"));
 
-        // Assert
-        Assert.That(result.Result, Is.TypeOf<BadRequestObjectResult>());
-        _mockTaskService.Verify(s => s.ToggleTaskCompletion(It.IsAny<long>()), Times.Never);
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<InvalidTaskException>(() => _controller.ToggleTaskCompletion(-1));
+        Assert.That(exception.PropertyName, Is.EqualTo("id"));
     }
 
     [Test]
-    public async AsyncTask ToggleTaskCompletion_WhenServiceThrowsException_ReturnsInternalServerError()
+    public async AsyncTask ToggleTaskCompletion_WhenServiceThrowsException_ExceptionBubbles()
     {
         // Arrange
         _mockTaskService.Setup(s => s.ToggleTaskCompletion(It.IsAny<long>()))
             .ThrowsAsync(new Exception("Database error"));
 
-        // Act
-        var result = await _controller.ToggleTaskCompletion(1);
-
-        // Assert
-        Assert.That(result.Result, Is.TypeOf<ObjectResult>());
-        var objectResult = result.Result as ObjectResult;
-        Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        // Act & Assert
+        Assert.ThrowsAsync<Exception>(() => _controller.ToggleTaskCompletion(1));
     }
 
     #endregion
@@ -376,58 +338,50 @@ public class TasksControllerTests
     }
 
     [Test]
-    public async AsyncTask DeleteTask_WhenTaskDoesNotExist_ReturnsNotFound()
+    public async AsyncTask DeleteTask_WhenTaskDoesNotExist_ThrowsTaskNotFoundException()
     {
         // Arrange
         var taskId = 999L;
-        _mockTaskService.Setup(s => s.DeleteTask(taskId)).ReturnsAsync(false);
+        _mockTaskService.Setup(s => s.DeleteTask(taskId)).ThrowsAsync(new TaskNotFoundException(taskId));
 
-        // Act
-        var result = await _controller.DeleteTask(taskId);
-
-        // Assert
-        Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
-        var notFoundResult = result as NotFoundObjectResult;
-        var response = notFoundResult!.Value;
-        Assert.That(response!.ToString(), Contains.Substring("Task with ID 999 not found"));
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<TaskNotFoundException>(() => _controller.DeleteTask(taskId));
+        Assert.That(exception.TaskId, Is.EqualTo(taskId));
     }
 
     [Test]
-    public async AsyncTask DeleteTask_WhenIdIsZero_ReturnsBadRequest()
+    public async AsyncTask DeleteTask_WhenIdIsZero_ThrowsInvalidTaskException()
     {
-        // Act
-        var result = await _controller.DeleteTask(0);
+        // Arrange
+        _mockTaskService.Setup(s => s.DeleteTask(0))
+            .ThrowsAsync(new InvalidTaskException("id", "Task ID must be greater than zero"));
 
-        // Assert
-        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
-        _mockTaskService.Verify(s => s.DeleteTask(It.IsAny<long>()), Times.Never);
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<InvalidTaskException>(() => _controller.DeleteTask(0));
+        Assert.That(exception.PropertyName, Is.EqualTo("id"));
     }
 
     [Test]
-    public async AsyncTask DeleteTask_WhenIdIsNegative_ReturnsBadRequest()
+    public async AsyncTask DeleteTask_WhenIdIsNegative_ThrowsInvalidTaskException()
     {
-        // Act
-        var result = await _controller.DeleteTask(-1);
+        // Arrange
+        _mockTaskService.Setup(s => s.DeleteTask(-1))
+            .ThrowsAsync(new InvalidTaskException("id", "Task ID must be greater than zero"));
 
-        // Assert
-        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
-        _mockTaskService.Verify(s => s.DeleteTask(It.IsAny<long>()), Times.Never);
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<InvalidTaskException>(() => _controller.DeleteTask(-1));
+        Assert.That(exception.PropertyName, Is.EqualTo("id"));
     }
 
     [Test]
-    public async AsyncTask DeleteTask_WhenServiceThrowsException_ReturnsInternalServerError()
+    public async AsyncTask DeleteTask_WhenServiceThrowsException_ExceptionBubbles()
     {
         // Arrange
         _mockTaskService.Setup(s => s.DeleteTask(It.IsAny<long>()))
             .ThrowsAsync(new Exception("Database error"));
 
-        // Act
-        var result = await _controller.DeleteTask(1);
-
-        // Assert
-        Assert.That(result, Is.TypeOf<ObjectResult>());
-        var objectResult = result as ObjectResult;
-        Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        // Act & Assert
+        Assert.ThrowsAsync<Exception>(() => _controller.DeleteTask(1));
     }
 
     #endregion
@@ -499,48 +453,7 @@ public class TasksControllerTests
             Times.Once);
     }
 
-    [Test]
-    public async AsyncTask GetAllTasks_WhenExceptionOccurs_LogsError()
-    {
-        // Arrange
-        var exception = new Exception("Database error");
-        _mockTaskService.Setup(s => s.GetAllTasks()).ThrowsAsync(exception);
 
-        // Act
-        await _controller.GetAllTasks();
-
-        // Assert
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error occurred while retrieving tasks")),
-                exception,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
-    [Test]
-    public async AsyncTask CreateTask_WhenArgumentException_LogsWarning()
-    {
-        // Arrange
-        var request = new CreateTaskRequest { Title = "Test" };
-        var exception = new ArgumentException("Invalid title");
-        _mockTaskService.Setup(s => s.CreateTask(request)).ThrowsAsync(exception);
-
-        // Act
-        await _controller.CreateTask(request);
-
-        // Assert
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Invalid argument while creating task")),
-                exception,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
 
     #endregion
 }

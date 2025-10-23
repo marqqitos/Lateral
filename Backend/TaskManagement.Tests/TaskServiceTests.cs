@@ -1,5 +1,6 @@
 ﻿using Moq;
 using TaskManagement.DTOs;
+using TaskManagement.Exceptions;
 using TaskManagement.Repositories;
 using TaskManagement.Services;
 using AsyncTask = System.Threading.Tasks.Task;
@@ -100,37 +101,33 @@ public class TaskServiceTests
     }
 
     [Test]
-    public async AsyncTask GetTaskById_WhenTaskDoesNotExist_ReturnsNull()
+    public async AsyncTask GetTaskById_WhenTaskDoesNotExist_ThrowsTaskNotFoundException()
     {
         // Arrange
         _mockRepository.Setup(r => r.GetById(It.IsAny<long>())).ReturnsAsync((Models.Task?)null);
 
-        // Act
-        var result = await _taskService.GetTaskById(1);
-
-        // Assert
-        Assert.That(result, Is.Null);
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<TaskNotFoundException>(() => _taskService.GetTaskById(1));
+        Assert.That(exception.TaskId, Is.EqualTo(1));
     }
 
     [Test]
-    public async AsyncTask GetTaskById_WhenIdIsZero_ReturnsNull()
+    public async AsyncTask GetTaskById_WhenIdIsZero_ThrowsInvalidTaskException()
     {
-        // Act
-        var result = await _taskService.GetTaskById(0);
-
-        // Assert
-        Assert.That(result, Is.Null);
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<InvalidTaskException>(() => _taskService.GetTaskById(0));
+        Assert.That(exception.PropertyName, Is.EqualTo("id"));
+        Assert.That(exception.Message, Contains.Substring("Task ID must be greater than zero"));
         _mockRepository.Verify(r => r.GetById(It.IsAny<long>()), Times.Never);
     }
 
     [Test]
-    public async AsyncTask GetTaskById_WhenIdIsNegative_ReturnsNull()
+    public async AsyncTask GetTaskById_WhenIdIsNegative_ThrowsInvalidTaskException()
     {
-        // Act
-        var result = await _taskService.GetTaskById(-1);
-
-        // Assert
-        Assert.That(result, Is.Null);
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<InvalidTaskException>(() => _taskService.GetTaskById(-1));
+        Assert.That(exception.PropertyName, Is.EqualTo("id"));
+        Assert.That(exception.Message, Contains.Substring("Task ID must be greater than zero"));
         _mockRepository.Verify(r => r.GetById(It.IsAny<long>()), Times.Never);
     }
 
@@ -184,24 +181,26 @@ public class TaskServiceTests
     }
 
     [Test]
-    public async AsyncTask CreateTask_WhenTitleIsEmpty_ThrowsArgumentException()
+    public async AsyncTask CreateTask_WhenTitleIsEmpty_ThrowsInvalidTaskException()
     {
         // Arrange
         var request = new CreateTaskRequest { Title = "", Description = "Description" };
 
         // Act & Assert
-        var exception = Assert.ThrowsAsync<ArgumentException>(() => _taskService.CreateTask(request));
+        var exception = Assert.ThrowsAsync<InvalidTaskException>(() => _taskService.CreateTask(request));
+        Assert.That(exception.PropertyName, Is.EqualTo("Title"));
         Assert.That(exception.Message, Contains.Substring("Task title cannot be empty"));
     }
 
     [Test]
-    public async AsyncTask CreateTask_WhenTitleIsWhitespace_ThrowsArgumentException()
+    public async AsyncTask CreateTask_WhenTitleIsWhitespace_ThrowsInvalidTaskException()
     {
         // Arrange
         var request = new CreateTaskRequest { Title = "   ", Description = "Description" };
 
         // Act & Assert
-        var exception = Assert.ThrowsAsync<ArgumentException>(() => _taskService.CreateTask(request));
+        var exception = Assert.ThrowsAsync<InvalidTaskException>(() => _taskService.CreateTask(request));
+        Assert.That(exception.PropertyName, Is.EqualTo("Title"));
         Assert.That(exception.Message, Contains.Substring("Task title cannot be empty"));
     }
 
@@ -325,54 +324,48 @@ public class TaskServiceTests
     }
 
     [Test]
-    public async AsyncTask ToggleTaskCompletion_WhenTaskDoesNotExist_ReturnsNull()
+    public async AsyncTask ToggleTaskCompletion_WhenTaskDoesNotExist_ThrowsTaskNotFoundException()
     {
         // Arrange
         _mockRepository.Setup(r => r.GetById(It.IsAny<long>())).ReturnsAsync((Models.Task?)null);
 
-        // Act
-        var result = await _taskService.ToggleTaskCompletion(1);
-
-        // Assert
-        Assert.That(result, Is.Null);
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<TaskNotFoundException>(() => _taskService.ToggleTaskCompletion(1));
+        Assert.That(exception.TaskId, Is.EqualTo(1));
         _mockRepository.Verify(r => r.Update(It.IsAny<Models.Task>()), Times.Never);
     }
 
     [Test]
-    public async AsyncTask ToggleTaskCompletion_WhenIdIsZero_ReturnsNull()
+    public async AsyncTask ToggleTaskCompletion_WhenIdIsZero_ThrowsInvalidTaskException()
     {
-        // Act
-        var result = await _taskService.ToggleTaskCompletion(0);
-
-        // Assert
-        Assert.That(result, Is.Null);
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<InvalidTaskException>(() => _taskService.ToggleTaskCompletion(0));
+        Assert.That(exception.PropertyName, Is.EqualTo("id"));
+        Assert.That(exception.Message, Contains.Substring("Task ID must be greater than zero"));
         _mockRepository.Verify(r => r.GetById(It.IsAny<long>()), Times.Never);
     }
 
     [Test]
-    public async AsyncTask ToggleTaskCompletion_WhenIdIsNegative_ReturnsNull()
+    public async AsyncTask ToggleTaskCompletion_WhenIdIsNegative_ThrowsInvalidTaskException()
     {
-        // Act
-        var result = await _taskService.ToggleTaskCompletion(-1);
-
-        // Assert
-        Assert.That(result, Is.Null);
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<InvalidTaskException>(() => _taskService.ToggleTaskCompletion(-1));
+        Assert.That(exception.PropertyName, Is.EqualTo("id"));
+        Assert.That(exception.Message, Contains.Substring("Task ID must be greater than zero"));
         _mockRepository.Verify(r => r.GetById(It.IsAny<long>()), Times.Never);
     }
 
     [Test]
-    public async AsyncTask ToggleTaskCompletion_WhenUpdateFails_ReturnsNull()
+    public async AsyncTask ToggleTaskCompletion_WhenUpdateFails_ThrowsInvalidOperationException()
     {
         // Arrange
         var existingTask = new Models.Task { Id = 1, IsCompleted = false };
         _mockRepository.Setup(r => r.GetById(1)).ReturnsAsync(existingTask);
         _mockRepository.Setup(r => r.Update(It.IsAny<Models.Task>())).ReturnsAsync((Models.Task?)null);
 
-        // Act
-        var result = await _taskService.ToggleTaskCompletion(1);
-
-        // Assert
-        Assert.That(result, Is.Null);
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<InvalidOperationException>(() => _taskService.ToggleTaskCompletion(1));
+        Assert.That(exception.Message, Contains.Substring("Failed to update task"));
     }
 
     [Test]
@@ -406,6 +399,8 @@ public class TaskServiceTests
     public async AsyncTask DeleteTask_WhenTaskExists_ReturnsTrue()
     {
         // Arrange
+        var existingTask = new Models.Task { Id = 1, Title = "Test Task" };
+        _mockRepository.Setup(r => r.GetById(1)).ReturnsAsync(existingTask);
         _mockRepository.Setup(r => r.Delete(1)).ReturnsAsync(true);
 
         // Act
@@ -413,42 +408,39 @@ public class TaskServiceTests
 
         // Assert
         Assert.That(result, Is.True);
+        _mockRepository.Verify(r => r.GetById(1), Times.Once);
         _mockRepository.Verify(r => r.Delete(1), Times.Once);
     }
 
     [Test]
-    public async AsyncTask DeleteTask_WhenTaskDoesNotExist_ReturnsFalse()
+    public async AsyncTask DeleteTask_WhenTaskDoesNotExist_ThrowsTaskNotFoundException()
     {
         // Arrange
-        _mockRepository.Setup(r => r.Delete(1)).ReturnsAsync(false);
+        _mockRepository.Setup(r => r.GetById(1)).ReturnsAsync((Models.Task?)null);
 
-        // Act
-        var result = await _taskService.DeleteTask(1);
-
-        // Assert
-        Assert.That(result, Is.False);
-        _mockRepository.Verify(r => r.Delete(1), Times.Once);
-    }
-
-    [Test]
-    public async AsyncTask DeleteTask_WhenIdIsZero_ReturnsFalse()
-    {
-        // Act
-        var result = await _taskService.DeleteTask(0);
-
-        // Assert
-        Assert.That(result, Is.False);
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<TaskNotFoundException>(() => _taskService.DeleteTask(1));
+        Assert.That(exception.TaskId, Is.EqualTo(1));
         _mockRepository.Verify(r => r.Delete(It.IsAny<long>()), Times.Never);
     }
 
     [Test]
-    public async AsyncTask DeleteTask_WhenIdIsNegative_ReturnsFalse()
+    public async AsyncTask DeleteTask_WhenIdIsZero_ThrowsInvalidTaskException()
     {
-        // Act
-        var result = await _taskService.DeleteTask(-1);
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<InvalidTaskException>(() => _taskService.DeleteTask(0));
+        Assert.That(exception.PropertyName, Is.EqualTo("id"));
+        Assert.That(exception.Message, Contains.Substring("Task ID must be greater than zero"));
+        _mockRepository.Verify(r => r.Delete(It.IsAny<long>()), Times.Never);
+    }
 
-        // Assert
-        Assert.That(result, Is.False);
+    [Test]
+    public async AsyncTask DeleteTask_WhenIdIsNegative_ThrowsInvalidTaskException()
+    {
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<InvalidTaskException>(() => _taskService.DeleteTask(-1));
+        Assert.That(exception.PropertyName, Is.EqualTo("id"));
+        Assert.That(exception.Message, Contains.Substring("Task ID must be greater than zero"));
         _mockRepository.Verify(r => r.Delete(It.IsAny<long>()), Times.Never);
     }
 

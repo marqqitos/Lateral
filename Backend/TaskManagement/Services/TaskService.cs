@@ -1,4 +1,5 @@
 using TaskManagement.DTOs;
+using TaskManagement.Exceptions;
 using TaskManagement.Models;
 using TaskManagement.Repositories;
 
@@ -25,13 +26,16 @@ public class TaskService : ITaskService
         };
     }
 
-    public async Task<TaskResponse?> GetTaskById(long id)
+    public async Task<TaskResponse> GetTaskById(long id)
     {
         if (id <= 0)
-            return null;
+            throw new InvalidTaskException(nameof(id), "Task ID must be greater than zero");
 
         var task = await _taskRepository.GetById(id);
-        return task != null ? MapToTaskResponse(task) : null;
+        if (task == null)
+            throw new TaskNotFoundException(id);
+
+        return MapToTaskResponse(task);
     }
 
     public async Task<TaskResponse> CreateTask(CreateTaskRequest request)
@@ -40,7 +44,7 @@ public class TaskService : ITaskService
             throw new ArgumentNullException(nameof(request));
 
         if (string.IsNullOrWhiteSpace(request.Title))
-            throw new ArgumentException("Task title cannot be empty", nameof(request));
+            throw new InvalidTaskException(nameof(request.Title), "Task title cannot be empty");
 
         var task = new Models.Task
         {
@@ -53,26 +57,33 @@ public class TaskService : ITaskService
         return MapToTaskResponse(createdTask);
     }
 
-    public async Task<TaskResponse?> ToggleTaskCompletion(long id)
+    public async Task<TaskResponse> ToggleTaskCompletion(long id)
     {
         if (id <= 0)
-            return null;
+            throw new InvalidTaskException(nameof(id), "Task ID must be greater than zero");
 
         var existingTask = await _taskRepository.GetById(id);
         if (existingTask == null)
-            return null;
+            throw new TaskNotFoundException(id);
 
         existingTask.IsCompleted = !existingTask.IsCompleted;
         existingTask.UpdatedAt = DateTime.UtcNow;
 
         var updatedTask = await _taskRepository.Update(existingTask);
-        return updatedTask != null ? MapToTaskResponse(updatedTask) : null;
+        if (updatedTask == null)
+            throw new InvalidOperationException("Failed to update task");
+
+        return MapToTaskResponse(updatedTask);
     }
 
     public async Task<bool> DeleteTask(long id)
     {
         if (id <= 0)
-            return false;
+            throw new InvalidTaskException(nameof(id), "Task ID must be greater than zero");
+
+        var existingTask = await _taskRepository.GetById(id);
+        if (existingTask == null)
+            throw new TaskNotFoundException(id);
 
         return await _taskRepository.Delete(id);
     }
